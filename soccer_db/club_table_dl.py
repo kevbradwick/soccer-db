@@ -20,6 +20,7 @@ def _get_table_data(season: int) -> List[Dict[str, Any]]:
     for row in soup.select("#yw1 table tbody tr"):
         columns = row.find_all('td')
         table.append({
+            "season": season,
             "position": columns[0].contents[0].strip(),
             "club": columns[2].contents[1].string.strip(),
             "played": columns[3].string.strip(),
