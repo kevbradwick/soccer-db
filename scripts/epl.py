@@ -163,6 +163,28 @@ class EPLCommands:
 
         print(f"Written match links to {OUTFILE}")
 
+    def download_match_(self):
+        """
+        Download the raw html page for the match. This expects the match_links.json to be
+        present in the data directory.
+        """
+        df = pd.read_json(
+            DATA_DIR / "transform/premierleague.com/matches/match_links.json"
+        )
+
+        skipped = 0
+        downloaded = 0
+        total = len(df.index)
+
+        print(f"starting download. current count {total}")
+
+        for i in df.index:
+            match_id = df["match_id"][i]
+            self.download_match(match_id)  # type: ignore
+            downloaded += 1
+
+        print(f"FINISHED: downloaded={downloaded}, skipped={skipped}, total={total}")
+
 
 if __name__ == "__main__":
     fire.Fire(EPLCommands)
