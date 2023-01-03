@@ -1,12 +1,12 @@
+import glob
+import json
+import re
 from pathlib import Path
 
 import fire
+import pandas as pd
 import requests
 from bs4 import BeautifulSoup
-import re
-import pandas as pd
-import json
-import glob
 
 DATA_DIR = Path(__file__).parent.resolve().parent.resolve() / "data"
 
@@ -18,7 +18,6 @@ _headers = {
         " like Gecko) Chrome/108.0.0.0 Safari/537.36"
     ),
 }
-
 
 
 class EPLCommands:
@@ -45,13 +44,12 @@ class EPLCommands:
 
         print(f"> Downloaded match {match_id} to {destination_file}")
 
-
     def process_season_results(self, season: str, return_result=False):
         """
         Extract the data from the season results web page and transform it into cleaned
         JSON data.
 
-        The web pages have to be downloaded manually due to the asynchronous nature the 
+        The web pages have to be downloaded manually due to the asynchronous nature the
         pagination loads as you scroll down the page.
         """
         season_file_name = f"{season.replace('/', '_')}.html"
@@ -114,10 +112,13 @@ class EPLCommands:
         if return_result:
             return results
 
-        OUT_FILE = DATA_DIR / f"transform/premierleague.com/results/{season_file_name.replace('html', 'json')}"
+        OUT_FILE = (
+            DATA_DIR
+            / f"transform/premierleague.com/results/{season_file_name.replace('html', 'json')}"
+        )
         with open(OUT_FILE, "w+") as fp:
             json.dump(results, fp, indent=2)
-        
+
         print(f"Processed season {season} to {OUT_FILE}")
 
     def process_all_results(self):
@@ -137,7 +138,31 @@ class EPLCommands:
         with open(OUT_FILE, "w+") as fp:
             json.dump(results, fp, indent=2)
 
+        self.validate_processed_match_results()
+
         print(f"Written {len(results)} to {OUT_FILE}")
+
+    def validate_processed_match_results(self):
+        """
+        This will run some validation against the produced results in all.json
+        """
+        df = pd.read_json(DATA_DIR / "transform/premierleague.com/results/all.json")
+
+        # check match link goes to the correct match (verified by match_id)
+        for i in df[["match_id", "match_link"]].index:
+            match_id = str(df["match_id"][i])
+            match_link = str(df["match_link"][i])[-len(match_id) :]
+            assert match_id == match_link
+
+    def product_match_links_dataset(self):
+        df = pd.read_json(DATA_DIR / "transform/premierleague.com/results/all.json")
+        subset = df[["match_id", "match_link"]]
+
+        OUTFILE = DATA_DIR / "transform/premierleague.com/matches/match_links.json"
+        subset.to_json(OUTFILE)
+
+        print(f"Written match links to {OUTFILE}")
+
 
 if __name__ == "__main__":
     fire.Fire(EPLCommands)
