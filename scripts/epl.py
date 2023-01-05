@@ -99,6 +99,7 @@ class EPLCommands:
                 is_draw = home_score == away_score
                 is_home_win = home_score > away_score
                 is_away_win = home_score < away_score
+                winner = -1
 
                 if is_draw:
                     home_points = 1
@@ -106,9 +107,11 @@ class EPLCommands:
                 elif is_home_win:
                     home_points = 3
                     away_points = 0
+                    winner = 0
                 elif is_away_win:
                     home_points = 0
                     away_points = 3
+                    winner = 1
                 else:
                     raise Exception("unable to determine the result")
 
@@ -128,6 +131,7 @@ class EPLCommands:
                         "home_score": int(score[0]),
                         "away_score": int(score[1]),
                         "match_link": f"https://www.premierleague.com/match/{match_id}",
+                        "winner": winner,
                     }
                 )
 
