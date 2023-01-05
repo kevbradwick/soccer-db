@@ -21,14 +21,14 @@ _headers = {
 
 
 class EPLCommands:
-    def download_match(self, match_id: int, force=False):
+    def download_match(self, match_id: int, force=False, skip_on_cached=True):
         """
         Download the HTML page for the match from premierleague.com
         """
         destination_file = (
             DATA_DIR / f"extract/premierleague.com/matches/{match_id}.html"
         )
-        if not force and destination_file.is_file():
+        if not force and skip_on_cached and destination_file.is_file():
             raise SystemExit("Match already downloaded")
 
         r = requests.get(
@@ -93,15 +93,37 @@ class EPLCommands:
                 assert home_team_abbr
                 assert away_team_abbr
 
+                home_score = int(score[0])
+                away_score = int(score[1])
+
+                is_draw = home_score == away_score
+                is_home_win = home_score > away_score
+                is_away_win = home_score < away_score
+
+                if is_draw:
+                    home_points = 1
+                    away_points = 1
+                elif is_home_win:
+                    home_points = 3
+                    away_points = 0
+                elif is_away_win:
+                    home_points = 0
+                    away_points = 3
+                else:
+                    raise Exception("unable to determine the result")
+
                 results.append(
                     {
+                        "season": season,
                         "match_id": int(match_id),
                         "match_ko": int(match_ko),
                         "date": fixture_date,
                         "home_team": home_team,
                         "home_team_abbr": home_team_abbr.text,
+                        "home_team_points": home_points,
                         "away_team": away_team,
                         "away_team_abbr": away_team_abbr.text,
+                        "away_team_points": away_points,
                         "venue": re.sub(r"<[^<]+?>", "", venue),
                         "home_score": int(score[0]),
                         "away_score": int(score[1]),
@@ -163,7 +185,7 @@ class EPLCommands:
 
         print(f"Written match links to {OUTFILE}")
 
-    def download_match_(self):
+    def download_all_matches(self):
         """
         Download the raw html page for the match. This expects the match_links.json to be
         present in the data directory.
@@ -176,11 +198,11 @@ class EPLCommands:
         downloaded = 0
         total = len(df.index)
 
-        print(f"starting download. current count {total}")
+        print(f"starting download. total records {total}")
 
         for i in df.index:
             match_id = df["match_id"][i]
-            self.download_match(match_id)  # type: ignore
+            self.download_match(match_id, skip_on_cached=False)  # type: ignore
             downloaded += 1
 
         print(f"FINISHED: downloaded={downloaded}, skipped={skipped}, total={total}")
