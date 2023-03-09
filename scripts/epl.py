@@ -189,6 +189,17 @@ class EPLCommands:
 
         print(f"Written match links to {OUTFILE}")
 
+    def produce_teams_dataset(self):
+        df = pd.read_json(DATA_DIR / "transform/premierleague.com/results/all.json")
+        ips = df.query("home_team_abbr == 'IPS' or away_team_abbr == 'IPS'")
+        print(ips[["home_team_abbr", "home_score", "away_score", "away_team_abbr"]].head())
+        # teams = df.home_team_abbr.unique()
+        # total = 0
+        # for team in teams:
+        #     results = df.query(f"home_team_abbr == @team or away_team_abbr == @team")
+        #     total += len(results)
+        # print(total)
+
     def download_all_matches(self):
         """
         Download the raw html page for the match. This expects the match_links.json to be
